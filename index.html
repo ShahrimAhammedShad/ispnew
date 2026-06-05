@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="ISP Billing Manager - client-side billing and customer management system" />
+  <title>ISP Billing Manager</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="loader" class="loader-screen">
+    <div class="loader-card">
+      <div class="loader-ring"></div>
+      <strong>ISP Billing Manager</strong>
+    </div>
+  </div>
+
+  <main id="loginView" class="login-view hidden">
+    <section class="login-panel">
+      <div class="brand-mark">IB</div>
+      <p class="eyebrow">Client-side ISP billing suite</p>
+      <h1>ISP Billing Manager</h1>
+      <p class="login-copy">Sign in with your role password to manage customers, bills, payments, and reports.</p>
+      <form id="loginForm" class="login-form">
+        <label for="passwordInput">Password</label>
+        <div class="password-row">
+          <input id="passwordInput" type="password" inputmode="numeric" autocomplete="current-password" placeholder="Enter password" required />
+          <button type="button" id="togglePassword" class="icon-btn" aria-label="Show password">Show</button>
+        </div>
+        <p id="loginSecurityText" class="security-text">Protected login with attempt limit and session timeout.</p>
+        <button class="primary-btn" type="submit">Login</button>
+      </form>
+    </section>
+  </main>
+
+  <div id="appView" class="app-shell hidden">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-mark small">IB</div>
+        <div>
+          <strong>ISP Billing Manager</strong>
+          <span id="roleBadge">Admin</span>
+          <span id="syncStatus" class="sync-status">Local backup ready</span>
+        </div>
+      </div>
+      <nav class="nav-list" aria-label="Main navigation">
+        <button class="nav-link active" data-view="dashboard">Dashboard</button>
+        <button class="nav-link" data-view="customers">Customers</button>
+        <button class="nav-link admin-only" data-view="billing">Billing</button>
+        <button class="nav-link admin-only" data-view="reports">Reports</button>
+      </nav>
+      <div class="sidebar-footer">
+        <button id="themeToggle" class="secondary-btn" type="button">Dark Mode</button>
+        <button id="logoutBtn" class="danger-btn" type="button">Logout</button>
+      </div>
+    </aside>
+
+    <nav class="mobile-nav" aria-label="Mobile navigation">
+      <button class="mobile-nav-link active" data-view="dashboard">Dashboard</button>
+      <button class="mobile-nav-link" data-view="customers">Customers</button>
+      <button class="mobile-nav-link admin-only" data-view="billing">Billing</button>
+      <button class="mobile-nav-link admin-only" data-view="reports">Reports</button>
+    </nav>
+
+    <section class="workspace">
+      <header class="topbar">
+        <button id="menuToggle" class="menu-toggle" aria-label="Open menu">Menu</button>
+        <div>
+          <h2 id="welcomeText">Welcome</h2>
+          <p id="dateTimeText"></p>
+        </div>
+        <div class="top-actions">
+          <button id="cycleBtn" class="secondary-btn admin-only" type="button">Run Monthly Cycle</button>
+          <button id="addCustomerBtn" class="primary-btn admin-only" type="button">Add Customer</button>
+        </div>
+      </header>
+
+      <section id="dashboardView" class="view active">
+        <div class="stats-grid">
+          <article class="stat-card"><span>Total Customers</span><strong id="statTotalCustomers">0</strong></article>
+          <article class="stat-card"><span>Active</span><strong id="statActive">0</strong></article>
+          <article class="stat-card"><span>Hold</span><strong id="statHold">0</strong></article>
+          <article class="stat-card"><span>Inactive</span><strong id="statInactive">0</strong></article>
+          <article class="stat-card admin-only"><span>Total Monthly Collection</span><strong id="statMonthlyCollection">BDT 0</strong></article>
+          <article class="stat-card admin-only"><span>Total Due Amount</span><strong id="statTotalDue">BDT 0</strong></article>
+          <article class="stat-card admin-only"><span>Today Collection</span><strong id="statTodayCollection">BDT 0</strong></article>
+          <article class="stat-card admin-only"><span>Monthly Revenue</span><strong id="statRevenue">BDT 0</strong></article>
+        </div>
+        <div class="panel-grid">
+          <section class="panel">
+            <div class="panel-heading">
+              <h3>Recent Transactions</h3>
+              <button class="text-btn" data-view-jump="billing" type="button">View All</button>
+            </div>
+            <div id="recentTransactions" class="activity-list"></div>
+          </section>
+          <section class="panel">
+            <div class="panel-heading">
+              <h3>Status Overview</h3>
+            </div>
+            <div class="status-bars">
+              <div><span>Active</span><progress id="barActive" max="100" value="0"></progress></div>
+              <div><span>Hold</span><progress id="barHold" max="100" value="0"></progress></div>
+              <div><span>Inactive</span><progress id="barInactive" max="100" value="0"></progress></div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section id="customersView" class="view">
+        <div class="toolbar">
+          <input id="searchInput" type="search" placeholder="Search name or phone number" />
+          <select id="statusFilter">
+            <option value="all">All statuses</option>
+            <option value="Active">Active</option>
+            <option value="Hold">Hold</option>
+            <option value="Inactive">Inactive</option>
+          </select>
+          <select id="sortSelect">
+            <option value="name">Sort by name</option>
+            <option value="due">Sort by due</option>
+            <option value="bill">Sort by bill</option>
+            <option value="status">Sort by status</option>
+          </select>
+          <button id="exportCsvBtn" class="secondary-btn admin-only" type="button">Export Excel</button>
+          <button id="exportPdfBtn" class="secondary-btn admin-only" type="button">Export PDF</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>Monthly</th>
+                <th>Discount</th>
+                <th>Prev Due</th>
+                <th>Total Bill</th>
+                <th>Paid</th>
+                <th>Current Due</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="customerTable"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="billingView" class="view admin-only">
+        <div class="panel">
+          <div class="panel-heading">
+            <h3>Billing History</h3>
+            <input id="historySearch" type="search" placeholder="Search payment history" />
+          </div>
+          <div id="billingHistory" class="history-list"></div>
+        </div>
+      </section>
+
+      <section id="reportsView" class="view admin-only">
+        <div class="report-grid">
+          <section class="panel">
+            <h3>Collection Summary</h3>
+            <div id="collectionSummary" class="summary-list"></div>
+          </section>
+          <section class="panel">
+            <h3>Monthly Billing Cycles</h3>
+            <div id="cycleHistory" class="summary-list"></div>
+          </section>
+        </div>
+      </section>
+    </section>
+  </div>
+
+  <div id="customerModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="customerModalTitle">
+    <form id="customerForm" class="modal-card">
+      <div class="modal-heading">
+        <h3 id="customerModalTitle">Add Customer</h3>
+        <button type="button" class="icon-btn close-modal" data-close="customerModal">Close</button>
+      </div>
+      <div class="form-grid">
+        <label>Customer Name<input id="customerName" required /></label>
+        <label>Phone Number<input id="customerPhone" required /></label>
+        <label class="full">Address<input id="customerAddress" required /></label>
+        <label>Monthly Bill Amount<input id="monthlyBill" type="number" min="0" step="1" required /></label>
+        <label>Discount Amount<input id="discountAmount" type="number" min="0" step="1" value="0" /></label>
+        <label>Previous Due<input id="previousDue" type="number" min="0" step="1" value="0" /></label>
+        <label>Paid Amount<input id="paidAmount" type="number" min="0" step="1" value="0" /></label>
+        <label>Account Status
+          <select id="accountStatus">
+            <option>Active</option>
+            <option>Hold</option>
+            <option>Inactive</option>
+          </select>
+        </label>
+        <label class="full">Notes<textarea id="customerNotes" rows="3"></textarea></label>
+      </div>
+      <div class="calc-strip">
+        <span>Total Bill: <strong id="previewTotalBill">BDT 0</strong></span>
+        <span>Current Due: <strong id="previewCurrentDue">BDT 0</strong></span>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="secondary-btn close-modal" data-close="customerModal">Cancel</button>
+        <button type="submit" class="primary-btn">Save Customer</button>
+      </div>
+    </form>
+  </div>
+
+  <div id="paymentModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="paymentModalTitle">
+    <form id="paymentForm" class="modal-card payment-card">
+      <div class="modal-heading">
+        <h3 id="paymentModalTitle">Receive Payment</h3>
+        <button type="button" class="icon-btn close-modal" data-close="paymentModal">Close</button>
+      </div>
+      <div id="paymentCustomerInfo" class="payment-info"></div>
+      <label>Payment Amount<input id="paymentAmount" type="number" min="1" step="1" required /></label>
+      <label>Payment Note<input id="paymentNote" placeholder="Cash, bKash, bank, reference" /></label>
+      <div class="calc-strip">
+        <span>Due After Payment: <strong id="paymentDuePreview">BDT 0</strong></span>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="secondary-btn close-modal" data-close="paymentModal">Cancel</button>
+        <button type="submit" class="primary-btn">Receive & Receipt</button>
+      </div>
+    </form>
+  </div>
+
+  <div id="receiptModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="receiptTitle">
+    <div class="modal-card receipt-card">
+      <div class="modal-heading no-print">
+        <h3 id="receiptTitle">Payment Receipt</h3>
+        <button type="button" class="icon-btn close-modal" data-close="receiptModal">Close</button>
+      </div>
+      <div id="receiptContent" class="receipt-content"></div>
+      <div class="modal-actions no-print">
+        <button type="button" id="printReceiptBtn" class="primary-btn">Print Receipt</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="confirmModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <div class="modal-card confirm-card">
+      <div class="modal-heading">
+        <h3 id="confirmTitle">Confirm Action</h3>
+      </div>
+      <p id="confirmMessage" class="confirm-message"></p>
+      <label id="confirmPasswordWrap" class="hidden">Password
+        <input id="confirmPasswordInput" type="password" inputmode="numeric" autocomplete="off" placeholder="Enter password" />
+      </label>
+      <div class="modal-actions">
+        <button type="button" id="confirmCancelBtn" class="secondary-btn">Cancel</button>
+        <button type="button" id="confirmOkBtn" class="danger-btn">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toastHost" class="toast-host" aria-live="polite"></div>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js" onerror="window.firebaseScriptFailed=true"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js" onerror="window.firebaseScriptFailed=true"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js" onerror="window.firebaseScriptFailed=true"></script>
+  <script src="app.js"></script>
+</body>
+</html>
