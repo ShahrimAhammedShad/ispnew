@@ -57,6 +57,7 @@
     syncStatus: $("#syncStatus"),
     dateTimeText: $("#dateTimeText"),
     customerTable: $("#customerTable"),
+    customerCards: $("#customerCards"),
     customerModal: $("#customerModal"),
     customerForm: $("#customerForm"),
     customerModalTitle: $("#customerModalTitle"),
@@ -491,6 +492,38 @@
         </td>
       </tr>
     `).join("") : `<tr><td colspan="10" class="empty-state">No customers found.</td></tr>`;
+    els.customerCards.innerHTML = customers.length ? customers.map(renderCustomerCard).join("") : `<div class="empty-state">No customers found.</div>`;
+  }
+
+  function renderCustomerCard(c) {
+    return `
+      <article class="customer-card">
+        <div class="customer-card-top">
+          <div>
+            <strong>${escapeHtml(c.name)}</strong>
+            <span>${escapeHtml(c.phone)}</span>
+          </div>
+          <span class="status-pill status-${escapeHtml(c.status)}">${escapeHtml(c.status)}</span>
+        </div>
+        <p class="customer-address">${escapeHtml(c.address)}</p>
+        <div class="mobile-money-grid">
+          <div><span>Current Due</span><strong>${money(c.currentDue)}</strong></div>
+          <div><span>Total Bill</span><strong>${money(c.totalBill)}</strong></div>
+          <div><span>Monthly</span><strong>${money(c.monthlyBill)}</strong></div>
+          <div><span>Paid</span><strong>${money(c.paidAmount)}</strong></div>
+        </div>
+        <label class="mobile-status-label">Status
+          <select class="status-select" data-status-id="${c.id}">
+            ${statusOptions(c.status).map((status) => `<option ${c.status === status ? "selected" : ""}>${status}</option>`).join("")}
+          </select>
+        </label>
+        <div class="mobile-card-actions">
+          <button class="primary-btn" data-pay-id="${c.id}">Pay</button>
+          <button class="secondary-btn" data-invoice-id="${c.id}">Invoice</button>
+          ${state.role === "admin" ? `<button class="secondary-btn" data-edit-id="${c.id}">Edit</button><button class="danger-btn" data-delete-id="${c.id}">Delete</button>` : ""}
+        </div>
+      </article>
+    `;
   }
 
   function renderBillingHistory() {
@@ -892,18 +925,22 @@
       if (modal.id === "confirmModal") return;
       if (event.target === modal) closeModal(modal.id);
     }));
-    els.customerTable.addEventListener("click", (event) => {
+    const handleCustomerAction = (event) => {
       const button = event.target.closest("button");
       if (!button) return;
       if (button.dataset.payId) openPaymentModal(button.dataset.payId);
       if (button.dataset.invoiceId) renderInvoice(button.dataset.invoiceId);
       if (button.dataset.editId) openCustomerModal(button.dataset.editId);
       if (button.dataset.deleteId) deleteCustomer(button.dataset.deleteId);
-    });
-    els.customerTable.addEventListener("change", (event) => {
+    };
+    const handleCustomerStatus = (event) => {
       const select = event.target.closest("[data-status-id]");
       if (select) changeStatus(select.dataset.statusId, select.value);
-    });
+    };
+    els.customerTable.addEventListener("click", handleCustomerAction);
+    els.customerCards.addEventListener("click", handleCustomerAction);
+    els.customerTable.addEventListener("change", handleCustomerStatus);
+    els.customerCards.addEventListener("change", handleCustomerStatus);
   }
 
   function initTheme() {
